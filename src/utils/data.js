@@ -11,6 +11,7 @@ let data = [
     name: 'Maria',
     comment: "I was very glad to have you after such a long time. Can you plan a meetup? Maybe this weekend?",
     replies: [],
+    isMe:false,
   },
   {
     id: 2,
@@ -18,6 +19,7 @@ let data = [
     name: 'Alex Benjamin',
     comment: "Home sweet home! I'm glad you are back. It's been two years, and I miss the football matches we had together. A lot has changed since you left. Let's meet at the ground tomorrow evening?",
     replies: [],
+    isMe:false,
   },
   {
     id: 3,
@@ -25,6 +27,7 @@ let data = [
     name: 'Tania',
     comment: "Hey bud, welcome back home. It's been so long to see you back again. I would love to hear the traveling stories of yours. Your place or mine?",
     replies: [],
+    isMe:false,
   },
 ];
 

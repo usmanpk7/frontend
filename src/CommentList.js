@@ -10,32 +10,37 @@ export default function CommentList({ comments }) {
   const [liked, setLiked] = useState({});
   const [newComment, setNewComment] = useState('');
   const [newComments, setNewComments] = useState([]);
-  const [replyingTo, setReplyingTo] = useState(null); // Track which comment is being replied to
+  const [allComments, setAllComments] = useState([]);
+  const [replyingTo, setReplyingTo] = useState(null); 
 
+  //Handling my new Comment
   function handleCommentSubmit(e) {
     e.preventDefault();
     if (newComment.trim() === '') {
       return;
     }
 
-    const commentId = newComments.length + 10;
+    const commentId = allComments?.length + 10;
     const newCommentObj = {
       id: commentId,
       image: user4,
       name: 'John Doe',
       comment: newComment,
       replies: [],
+      isMe:true
     };
 
-    setNewComments([...newComments, newCommentObj]);
+    allComments.push(newCommentObj)
 
-    const allComments = JSON.parse(localStorage.getItem('comments')) || [];
-    const updatedComments = [...allComments, newCommentObj];
+    const allLocalStorageComments = JSON.parse(localStorage.getItem('comments')) ||allComments|| [];
+    const updatedComments = [...allLocalStorageComments, newCommentObj];
+    // debugger
     localStorage.setItem('comments', JSON.stringify(updatedComments));
 
     setNewComment('');
   }
 
+  // Handling the Like 
   function handleLike(id) {
     setLiked((prevLiked) => ({
       ...prevLiked,
@@ -48,51 +53,59 @@ export default function CommentList({ comments }) {
     }));
   }
 
-  function handleRemoveComment(commentId) {
-    const updatedNewComments = newComments.filter((comment) => comment.id !== commentId);
-    setNewComments(updatedNewComments);
 
-    const allComments = JSON.parse(localStorage.getItem('comments')) || [];
-    const updatedComments = allComments.filter((comment) => comment.id !== commentId);
-    localStorage.setItem('comments', JSON.stringify(updatedComments));
+  //Removing My Comment
+  function handleRemoveComment(commentId) {
+    const updatedNewComments = allComments.filter((comment) => comment.id !== commentId);
+    setAllComments(updatedNewComments);
+    localStorage.removeItem('comments')
+    localStorage.setItem('comments', JSON.stringify(allComments));
   }
 
+  //Handling My Reply
   function handleReply(commentId, replyText) {
-    // Find the comment being replied to
-    const commentedIndex = newComments.findIndex((comment) => comment.id === commentId);
+    const commentedIndex = allComments.findIndex((comment) => comment.id === commentId);
 
     if (commentedIndex !== -1) {
-      // Add the reply to the specified comment's replies array
       const newReply = {
-        id: newComments.length + 1, // Assign a unique ID to the reply
+        id: newComments.length + 1, 
         image: user4,
         name: 'John Doe',
         comment: replyText,
+        isMe:true
       };
-      newComments[commentedIndex].replies.push(newReply);
+      allComments[commentedIndex].replies.push(newReply);
 
-      // Update the newComments state with the updated comment
-      setNewComments([...newComments]);
+      setAllComments([...allComments]);
 
-      // Clear the reply form and reset the replyingTo state
       setReplyingTo(null);
+      localStorage.removeItem('comments')
+      localStorage.setItem('comments', JSON.stringify(allComments));
     }
   }
 
+  //Removing the reply of the comments
+  function removeCommentReply(id,replyIndex){
+    allComments[id].replies.splice(replyIndex,1)
+    setAllComments([...allComments]);
+    localStorage.removeItem('comments')
+    localStorage.setItem('comments', JSON.stringify(allComments));
+  }
+
   useEffect(() => {
-    const allComments = JSON.parse(localStorage.getItem('comments')) || [];
-    setNewComments(allComments);
+    const allComments = JSON.parse(localStorage.getItem('comments')) || [...comments];
+    setAllComments([...allComments]);
   }, [])
 
   return (
     <ul className='comment-list'>
-      {comments.map((comm) => {
-        const { id, image, name, comment, replies } = comm;
+      { allComments && allComments?.map((comm,index) => {
+        const { id, image, name, comment, replies, isMe } = comm;
 
         return (
           <li key={id}>
             <div className='parent'>
-              <img src={image} alt={name} />
+              <img src={image} alt={name} className='user-image'/>
               <div className='child'>
                 <h3>{name}</h3>
                 <p>{comment}</p>
@@ -105,29 +118,50 @@ export default function CommentList({ comments }) {
                   )}
                   <span>{count[id] || 0}</span>
                   <span className='dot'>.</span>
+                  {!isMe && 
                   <button
                     className='reply-btn'
-                    onClick={() => setReplyingTo(id)} // Set the comment ID for the reply
+                    onClick={() => setReplyingTo(id)} 
                   >
                     Reply
                   </button>
+                 }
+                     {isMe && 
+     
+              <button className='remove-btn' onClick={() => handleRemoveComment(id)}>
+                Remove
+              </button>
+              }
                 </div>
               </div>
             </div>
             {replyingTo === id && (
-              <div className='reply-form'>
+               <div className='reply-form'>
                 <ReplyForm onSubmit={(replyText) => handleReply(id, replyText)} />
               </div>
             )}
-            {/* Render replies */}
+        
+            {/* Getting My replies */}
             <ul className='replies'>
-              {replies.map((reply) => (
-                <li key={reply.id}>
+              {replies?.map((reply,replyIndex) =>(
+                 <li key={reply.id}>
                   <div className='parent'>
-                    <img src={reply.image} alt={reply.name} />
+                    <img src={reply.image} alt={reply.name} className='user-image' />
                     <div className='child'>
                       <h3>{reply.name}</h3>
                       <p>{reply.comment}</p>
+                      <div className='footer'>
+                  {liked[id] ? (
+                    <BsFillSuitHeartFill onClick={() => handleLike(id)} className='filled-heart' />
+                  ) : (
+                    <BsSuitHeart onClick={() => handleLike(id)} />
+                  )}
+                  <span>{count[id] || 0}</span>
+                  <span className='dot'>.</span>
+                  <button className='remove-btn' onClick={(e)=>{e.preventDefault();removeCommentReply(index,replyIndex)}}>
+                    Remove
+                  </button>
+                </div>
                     </div>
                   </div>
                 </li>
@@ -137,35 +171,7 @@ export default function CommentList({ comments }) {
         );
       })}
 
-      {/* Render the new comments with Remove button */}
-      {newComments.map((comm) => {
-        const { id, image, name, comment } = comm;
-
-        return (
-          <li key={id}>
-            <div className='parent'>
-              <img src={image} alt={name} />
-              <div className='child'>
-                <h3>{name}</h3>
-                <p>{comment}</p>
-
-                <div className='footer'>
-                  {liked[id] ? (
-                    <BsFillSuitHeartFill onClick={() => handleLike(id)} className='filled-heart' />
-                  ) : (
-                    <BsSuitHeart onClick={() => handleLike(id)} />
-                  )}
-                  <span>{count[id] || 0}</span>
-                  <span className='dot'>.</span>
-                  <button className='remove-btn' onClick={() => handleRemoveComment(id)}>
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-          </li>
-        );
-      })}
+     
 
       <form className='form' onSubmit={handleCommentSubmit}>
         <div className='input-container'>

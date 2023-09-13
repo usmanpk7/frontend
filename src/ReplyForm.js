@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { IoIosSend } from 'react-icons/io';
 
-// Define ReplyForm as a separate component
 function ReplyForm({ onSubmit }) {
   const [replyText, setReplyText] = useState('');
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (replyText.trim() === '') {
